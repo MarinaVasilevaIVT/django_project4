@@ -1,0 +1,14 @@
+{% extends 'polls/base_generic.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <h2>Создать новый опрос</h2>
+  <form method="post">
+    {% csrf_token %}
+    
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-primary">Создать</button>
+  </form>
+{% endblock %}

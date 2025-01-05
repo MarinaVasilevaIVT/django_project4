@@ -1,0 +1,43 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Polls{% endblock %}</title>
+    <!-- Подключение Bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+    <style>
+        body {
+            background-image: url("{% static 'polls/images/back.png' %}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #000000; 
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container mt-4">
+        <h1><a href="{% url 'polls:index' %}" style="color: rgb(0, 0, 0);">Опросы</a></h1>
+        {% if user.is_authenticated %}
+            <p>Добро пожаловать, {{ user.username }}! <a href="{% url 'polls:logout' %}" style="color: rgb(241, 77, 77);">Выйти</a></p>
+            <p><a href="{% url 'polls:create_poll' %}" style="color: rgb(24, 51, 131);">Создать новый опрос</a></p>
+        {% else %}
+            <p><a href="{% url 'polls:login' %}" style="color: rgb(54, 73, 80);">Войти</a> или <a href="{% url 'polls:register' %}" style="color: rgb(54, 73, 80);">Зарегистрироваться</a></p>
+        {% endif %}
+    </div>
+
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Исключаем базу данных SQLite
+*.sqlite3
+
+# Python файлы кэша
+__pycache__/
+*.py[cod]
+
+# Логи и временные файлы
+*.log
+*.tmp
+
+# Виртуальное окружение
+venv/
+env/
+
+# Настройки IDE
+*.idea/
+.vscode/
+
+# Файлы ОС
+.DS_Store
+Thumbs.db

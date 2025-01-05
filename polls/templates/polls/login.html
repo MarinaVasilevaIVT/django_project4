@@ -1,0 +1,20 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+{% extends 'polls/base_generic.html' %}
+{% load socialaccount %}
+{% block content %}
+  <h2>Вход</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Войти</button>
+  </form>
+
+  <div class="mt-3">
+    <button class="btn btn-outline-info">
+      <a href="{% provider_login_url provider.id %}">
+        <i class="fab fa-google"></i>
+        Вход через Google
+      </a>
+    </button>
+  </div>
+{% endblock %}

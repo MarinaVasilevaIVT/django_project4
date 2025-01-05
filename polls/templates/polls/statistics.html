@@ -1,0 +1,172 @@
+{% extends 'polls/base_generic.html' %}
+
+{% load i18n %}
+{% block content %}
+<style>
+    a.question-link:link, a.question-link:visited {
+        background-color: #f44336;
+        color: white;
+        padding: 15px 25px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    a.question-link:hover, a.question-link:active {
+        background-color: red;
+    }
+
+    hr.dates-header {
+        height: 4px;
+        background-color: black;
+        border: none;
+    }
+
+    hr.questions-separator {
+        height: 2px;
+        background-color: brown;
+        border: none;
+    }
+</style>
+<div class="container">
+    <div class="row">
+        <div class="col-md-5" style="border-right: 1px solid #ccc;">
+            <h2>Список опросов</h2>
+
+            <div class="form-group">
+                <label for="from-date">С:</label>
+                <input type="date" class="form-control" id="from-date" required>
+            </div>
+            <div class="form-group">
+                <label for="to-date">До:</label>
+                <input type="date" class="form-control" id="to-date" required>
+            </div>
+            <div class="form-group">
+                <label for="min-votes">Минимальное количество голосов:</label>
+                <input type="number" class="form-control" id="min-votes" placeholder="Минимум" min="0">
+            </div>
+            <div class="form-group">
+                <label for="max-votes">Максимальное количество голосов:</label>
+                <input type="number" class="form-control" id="max-votes" placeholder="Максимум" min="0">
+            </div>
+
+            {% csrf_token %}
+            <button class="btn btn-primary mt-2" id="submit-btn">Поиск</button>
+            <hr class="dates-header">
+            <div id="question-list"></div>
+        </div>
+        <div class="col-md-7">
+            <h2>Статистика по опросам</h2>
+            <div id="stats-container"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateQuestionStatsContainer(data) {
+    let container = $('#stats-container');
+    container.empty();
+
+    let totalVotes = $('<p>').text('Общее количество голосов: ' + data.total_votes);
+    container.append(totalVotes);
+
+    let choices = data.choices;
+    let choicesList = $('<ul>');
+    choices.forEach(function(choice) {
+        let choiceItem = $('<li>').text(choice.choice_text + ' (' + choice.percentage + '%)');
+        choicesList.append(choiceItem);
+    });
+    container.append(choicesList);
+
+    let mostPopularChoice = $('<p>').text('Самый популярный ответ: ' + data.most_popular_choice);
+    let leastPopularChoice = $('<p>').text('Самый непопулярный ответ: ' + data.least_popular_choice);
+    container.append(mostPopularChoice);
+    container.append(leastPopularChoice);
+
+    let svgImage = $('<div>').html(data.histogram_svg);
+    container.append(svgImage);
+}
+
+function requestQuestionStats(id) {
+    let dummyQuestionStatsUrl = '{% url "polls:statistics-question-stats" "999999999999" %}';
+    let realQuestionStatsUrl = dummyQuestionStatsUrl.replace('999999999999', id);
+    $.ajax({
+        url: realQuestionStatsUrl,
+        type: 'GET',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(data) {
+            updateQuestionStatsContainer(data);
+        },
+        error: function() {
+            console.log('Error occurred while fetching question stats');
+        }
+    });
+}
+
+$(document).ready(function() {
+    let today = new Date();
+    let fromDate = new Date(today);
+    fromDate.setDate(today.getDate() - 60);
+    let toDate = today.toISOString().split('T')[0];
+
+    $('#from-date').val(fromDate.toISOString().split('T')[0]);
+    $('#to-date').val(toDate);
+
+    $('#submit-btn').click(function() {
+        let fromDate = $('#from-date').val();
+        let toDate = $('#to-date').val();
+        let minVotes = $('#min-votes').val();
+        let maxVotes = $('#max-votes').val();
+
+        let data = {
+            'publication-dates': {
+                'from': fromDate,
+                'to': toDate
+            },
+            'votes-range': {
+                'min': minVotes || 0,
+                'max': maxVotes || Number.MAX_SAFE_INTEGER
+            }
+        };
+
+        $.ajax({
+            url: '{% url "polls:statistics-question-list" %}',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            data: JSON.stringify(data),
+            contentType: 'application/json',
+            success: function(response) {
+                let questions = response.questions;
+                $('#question-list').empty();
+
+                questions.forEach(function(question) {
+                    let questionHtml = '<div class="question">';
+                    questionHtml += `<h6><a id="question-${question.id}" class="question-link" href="#" onclick="requestQuestionStats(${question.id}); return false;">${question.question_text}</a></h6>`;
+
+                    let pubDate = new Date(question.pub_date);
+                    let formattedDate = pubDate.toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    questionHtml += '<div style="background-color: white; color: black; padding: 10px;"><p>' + formattedDate + '</p></div>';
+                    questionHtml += '</div><hr class="questions-separator">';
+
+                    $('#question-list').append(questionHtml);
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
