@@ -144,6 +144,24 @@ class QuestionStatsAPIView(APIView):
         stats['histogram_svg'] = buffer.getvalue().decode()
 
         return Response(stats)
+
+import csv
+from django.http import HttpResponse
+
+class ExportDataView(APIView):
+    def get(self, request, format=None):
+        questions = Question.objects.all()
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="polls_data.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['Question', 'Choice', 'Votes'])
+        
+        for question in questions:
+            for choice in question.choice_set.all():
+                writer.writerow([question.question_text, choice.choice_text, choice.votes])
+        
+        return response
 ```
 
 И добавим новые маршруты в ```polls/urls.py```:
@@ -155,6 +173,7 @@ urlpatterns = [
     path("statistics", views.StatisticsView.as_view(), name="statistics"),
     path("statistics-question-list", views.QuestionView.as_view(), name="statistics-question-list"),
     path('statistics/question-stats/<int:pk>/', views.QuestionStatsAPIView.as_view(), name='statistics-question-stats'),
+    path('export/', views.ExportDataView.as_view(), name='export_data'),
 ]
 
 ```
@@ -342,7 +361,31 @@ $(document).ready(function() {
 ```
 
 Теперь перейдем к скриншотам и тому, как теперь выглядит наше веб-приложение:
+
+Как выглядит страница по адресу http://127.0.0.1:8000/statistics:
+
 ![1](images/1.png)
+
+Если указать фильтры:
+
+![2](images/2.png)
+
+Без указания фильтров сортирует опросы от старого к наиболее свежему:
+
+![3](images/3.png)
+
+А так выглядит подробная статистика одного опроса:
+
+![4](images/4.png)
+
+Далее перейдем по маршруту http://127.0.0.1:8000/statistics/question-stats/14/:
+
+![5](images/5.png)
+
+Если перейти по маршруту http://127.0.0.1:8000/export, то скачается csv файл с результатами всех опросов:
+
+![6](images/6.png)
+
 
 
 
